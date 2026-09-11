@@ -1,0 +1,48 @@
+{
+  "name": "lombokmarkdown",
+  "version": "1.0.0",
+  "description": "LombokMarkDown — Lightweight Markdown to HTML converter with GFM support",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "test": "vitest",
+    "test:cov": "vitest --coverage",
+    "lint": "tsc --noEmit",
+    "dev": "vitest --watch"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "vitest": "^2.0.0",
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codinglombok/LombokMarkDown.git"
+  },
+  "homepage": "https://codinglombok.github.io/LombokMarkDown",
+  "bugs": {
+    "url": "https://github.com/codinglombok/LombokMarkDown/issues"
+  },
+  "author": "Lombok Digital <hello@codinglombok.dev>",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
