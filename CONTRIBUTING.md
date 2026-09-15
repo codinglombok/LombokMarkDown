@@ -1,6 +1,6 @@
-# Contributing to LombokMarkdown
+# Contributing to LombokMarkDown
 
-Thank you for your interest in contributing! LombokMarkdown is part of the
+Thank you for your interest in contributing! LombokMarkDown is part of the
 [Lombok Ecosystem](https://github.com/codinglombok).
 
 ## Ways to contribute

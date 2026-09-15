@@ -3,14 +3,14 @@
 > Zero-dependency Markdown → HTML converter with GFM, metadata extraction, and TOC generation.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![npm version](https://img.shields.io/npm/v/lombokmarkdown.svg)](https://www.npmjs.com/package/lombokmarkdown)
+[![npm version](https://img.shields.io/npm/v/lombokmarkdown.svg?logo=npm)](https://www.npmjs.com/package/lombokmarkdown)
 [![npm downloads](https://img.shields.io/npm/dm/lombokmarkdown.svg)](https://www.npmjs.com/package/lombokmarkdown)
-[![PyPI](https://img.shields.io/pypi/v/lombokmarkdown.svg)](https://pypi.org/project/lombokmarkdown)
-[![Packagist](https://img.shields.io/packagist/v/codinglombok/lombokmarkdown.svg)](https://packagist.org/packages/codinglombok/lombokmarkdown)
+[![PyPI](https://img.shields.io/pypi/v/lombokmarkdown.svg?logo=pypi)](https://pypi.org/project/lombokmarkdown)
+[![Packagist](https://img.shields.io/packagist/v/codinglombok/lombokmarkdown.svg?logo=packagist)](https://packagist.org/packages/codinglombok/lombokmarkdown)
 [![CI](https://github.com/codinglombok/LombokMarkDown/actions/workflows/ci.yml/badge.svg)](https://github.com/codinglombok/LombokMarkDown/actions/workflows/ci.yml)
 [![jsDelivr](https://img.shields.io/jsdelivr/npm/hm/lombokmarkdown.svg)](https://www.jsdelivr.com/package/npm/lombokmarkdown)
-[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)](tsconfig.json)
-[![Lombok Ecosystem](https://img.shields.io/badge/Lombok-Ecosystem-2e7d5b)](https://github.com/codinglombok)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript)](tsconfig.json)
+[![Lombok Ecosystem](https://img.shields.io/badge/Lombok-Ecosystem-2e7d5b?logo=github)](https://github.com/codinglombok)
 
 ---
 
@@ -318,13 +318,14 @@ See [CHANGELOG.md](CHANGELOG.md)
 
 This library is part of the **[Lombok Ecosystem](https://github.com/codinglombok)** — a modular suite of production-grade, Apache-2.0 libraries for document processing, PDF generation, and data visualization. Built for **developers, researchers, students, and the wider community**.
 
-[![Ecosystem](https://img.shields.io/badge/Lombok-Ecosystem-2e7d5b)](https://github.com/codinglombok)
-[![Roadmap](https://img.shields.io/badge/Project-Roadmap-8b5cf6)](https://github.com/orgs/codinglombok/projects)
+[![Ecosystem](https://img.shields.io/badge/Lombok-Ecosystem-2e7d5b?logo=github)](https://github.com/codinglombok)
+[![Roadmap](https://img.shields.io/badge/Project-Roadmap-8b5cf6?logo=github)](https://github.com/orgs/codinglombok/projects)
 
 | Layer | Library | Purpose |
 |-------|---------|---------|
 | **Core** | [LombokPDF](https://github.com/codinglombok/LombokPDF) | PDF generation hub |
 | **Core** | [LombokCSS](https://github.com/codinglombok/LombokCSS) | Token-first CSS framework |
+| **Core** | [LombokFuzzer](https://github.com/codinglombok/LombokFuzzer) | Fuzzing test framework |
 | **Core** | [LombokCharts](https://github.com/codinglombok/LombokCharts) | Zero-dependency charts |
 | **Docs** | [LombokDocFlow](https://github.com/codinglombok/LombokDocFlow) | Universal import/export |
 | **Convert** | [LombokMarkDown](https://github.com/codinglombok/LombokMarkDown) | Markdown → HTML |
