@@ -1,50 +1,21 @@
 # LombokMarkDown
 
-> Zero-dependency Markdown → HTML converter with GFM, metadata extraction, and TOC generation.
+> CommonMark 0.31.2 and GitHub Flavored Markdown to HTML with safe defaults, an AST, metadata, heading ids, and a table of contents. Zero dependencies.
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![npm version](https://img.shields.io/npm/v/lombokmarkdown.svg?logo=npm)](https://www.npmjs.com/package/lombokmarkdown)
-[![npm downloads](https://img.shields.io/npm/dm/lombokmarkdown.svg)](https://www.npmjs.com/package/lombokmarkdown)
-[![PyPI](https://img.shields.io/pypi/v/lombokmarkdown.svg?logo=pypi)](https://pypi.org/project/lombokmarkdown)
-[![Packagist](https://img.shields.io/packagist/v/codinglombok/lombokmarkdown.svg?logo=packagist)](https://packagist.org/packages/codinglombok/lombokmarkdown)
 [![CI](https://github.com/codinglombok/LombokMarkDown/actions/workflows/ci.yml/badge.svg)](https://github.com/codinglombok/LombokMarkDown/actions/workflows/ci.yml)
-[![jsDelivr](https://img.shields.io/jsdelivr/npm/hm/lombokmarkdown.svg)](https://www.jsdelivr.com/package/npm/lombokmarkdown)
+[![CommonMark](https://img.shields.io/badge/CommonMark-0.31.2%20652%2F652-success)](tests/spec.test.ts)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript)](tsconfig.json)
 [![Lombok Ecosystem](https://img.shields.io/badge/Lombok-Ecosystem-2e7d5b?logo=github)](https://github.com/codinglombok)
 
----
+Part of the [Lombok Ecosystem](https://github.com/codinglombok).
 
-Lightweight, zero-dependency Markdown to HTML converter with GitHub Flavored Markdown (GFM) support.
+## Mengapa library ini? (Why this library?)
 
-## Features
-**Fast & Lightweight**
-- Zero runtime dependencies
-- Pure TypeScript implementation
-- ~10KB minified
-**Complete Markdown Support**
-- Headings (h1-h6)
-- Paragraphs
-- Bold, italic, inline code
-- Code blocks with syntax highlighting
-- Lists (ordered & unordered)
-- Blockquotes
-- Horizontal rules
-- Links and images
-- Metadata extraction
-**Metadata Extraction**
-- Extract all headings with levels
-- Extract all links
-- Extract all images
-- Extract all code blocks
-- Generate table of contents
-**Multi-Language**
-- JavaScript/TypeScript (this package)
-- Python (coming soon)
-- PHP (coming soon)
-- Go (coming soon)
-**Apache 2.0 License**
-- Commercial friendly
-- Attribution required
+- **Standard output.** Passes all 652 examples of the CommonMark 0.31.2 spec and all 24 GFM 0.29 extension examples (tables, strikethrough, task lists, extended autolinks, tag filter), checked on every CI run.
+- **Safe by default.** Raw HTML is shown as text and `javascript:`, `vbscript:`, `file:`, and non-image `data:` URLs are emptied, so user-written Markdown cannot inject markup. Both can be relaxed for trusted documents.
+- **More than HTML.** The same parse gives you a simple AST, headings, links, images, code blocks, GitHub-style heading ids, and a nested table of contents.
+- **Robust.** No recursion that depends on the input and no quadratic paths: 22 adversarial patterns of 20 000 repetitions each finish in well under a second. Zero runtime dependencies; runs in Node.js, Deno, Bun, browsers, and edge runtimes.
 
 ## Installation
 
@@ -52,286 +23,77 @@ Lightweight, zero-dependency Markdown to HTML converter with GitHub Flavored Mar
 npm install lombokmarkdown
 ```
 
-## Quick Start
+Not yet published to npm; until then install from GitHub with `npm install github:codinglombok/LombokMarkDown`.
 
-```typescript
-import { Markdown } from 'lombokmarkdown'
+## Quick start
 
-const md = new Markdown(`
-# Hello World
+```ts
+import { Markdown, markdownToHTML } from 'lombokmarkdown'
 
-This is **bold** and *italic* text.
+markdownToHTML('**Hello** world')
+// '<p><strong>Hello</strong> world</p>\n'
 
-- Item 1
-- Item 2
-
-[Visit Example](https://example.com)
-`)
-
-// Get HTML
-const html = md.parse().getHTML()
-
-// Get metadata
-const meta = md.getMetadata()
-console.log(meta.headings)    // [{ level: 1, text: 'Hello World' }]
-console.log(meta.links)       // [{ text: 'Visit Example', url: 'https://example.com' }]
-
-// Get table of contents
-const toc = md.getTableOfContents()
-
-// Get specific content
-console.log(md.getHeadings())
-console.log(md.getImages())
-console.log(md.getCodeBlocks())
+const md = new Markdown('# Guide\n\n## Install\n\n[Download](https://example.com)', { headingIds: true })
+md.getHTML()
+// '<h1 id="guide">Guide</h1>\n<h2 id="install">Install</h2>\n<p><a href="https://example.com">Download</a></p>\n'
+md.getTableOfContents()
+// [{ level: 1, text: 'Guide', id: 'guide', children: [{ level: 2, text: 'Install', id: 'install', children: [] }] }]
+md.getLinks()
+// [{ text: 'Download', url: 'https://example.com' }]
 ```
 
-## API Reference
+User input is safe without extra options:
 
-### `new Markdown(text, options?)`
-
-Create a new Markdown parser.
-**Parameters:**
-- `text` (string): Markdown text to parse
-- `options` (MarkdownOptions, optional):
-  - `gfm` (boolean): Enable GitHub Flavored Markdown (default: true)
-  - `breaks` (boolean): Convert `\n` to `<br>` (default: false)
-**Example:**
-```typescript
-const md = new Markdown('# Title', { gfm: true })
+```ts
+markdownToHTML('<img src=x onerror=alert(1)> [click](javascript:alert(1))')
+// '<p>&lt;img src=x onerror=alert(1)&gt; <a href="">click</a></p>\n'
 ```
 
-### `parse(): this`
+## Options
 
-Parse the markdown and return self for chaining.
+| Option | Default | Effect |
+|---|---|---|
+| `gfm` | `true` | tables, `~~strikethrough~~`, `- [ ]` task lists, `www.` / `https://` / email autolinks, GFM tag filter |
+| `html` | `false` | pass raw HTML through instead of escaping it |
+| `safeLinks` | `true` | empty unsafe URL schemes |
+| `breaks` | `false` | render soft line breaks as `<br />` |
+| `headingIds` | `false` | add GitHub-style `id` attributes to headings |
 
-```typescript
-const html = new Markdown(text).parse().getHTML()
-```
+API: `getHTML()`, `getAST()`, `getMetadata()`, `getHeadings()`, `getLinks()`, `getImages()`, `getCodeBlocks()`, `getTableOfContents()`, `toJSON()`, plus `markdownToHTML()` and `Slugger`. Full reference: [docs/API_LombokMarkDown_v2.0.0.md](docs/API_LombokMarkDown_v2.0.0.md).
 
-### `getHTML(): string`
+## Upgrading from 1.x
 
-Get the HTML output.
+2.0.0 replaces the parser. HTML now follows the CommonMark reference format, raw HTML is escaped by default, and the `Tokenizer`, `Parser`, and `HTMLCompiler` exports are gone. See [UPGRADE.md](UPGRADE.md).
 
-```typescript
-const html = md.parse().getHTML()
-// Returns: "<h1>Hello</h1><p>World</p>"
-```
+## Known limitations
 
-### `getAST(): ASTNode[]`
+No GFM footnotes, front matter, math, or plugin system; with `html: true` the output still needs a sanitizer for untrusted input. See [Known limitations](docs/full_summary_project_LombokMarkDown_v2.0.0.md#2-batasan-yang-diketahui).
 
-Get the Abstract Syntax Tree.
+## Language ports
 
-```typescript
-const ast = md.getAST()
-// [
-//   { type: 'heading', depth: 1, children: [...] },
-//   { type: 'paragraph', children: [...] }
-// ]
-```
+| Language | Status |
+|---|---|
+| TypeScript / JavaScript | Reference implementation: CommonMark 652/652, GFM 24/24, 114 project vectors |
+| Python, Go, PHP | Planned (stub README only, no code yet) |
 
-### `getMetadata(): MarkdownMetadata`
+## Security
 
-Get extracted metadata.
+Guarantees are normative in [SPEC section 7](docs/SPEC_LombokMarkDown_v2.0.0.md#7-keamanan-normatif). Report vulnerabilities as described in [SECURITY.md](SECURITY.md).
 
-```typescript
-const meta = md.getMetadata()
-// {
-//   headings: [...],
-//   links: [...],
-//   images: [...],
-//   codeBlocks: [...]
-// }
-```
-
-### `getTableOfContents(): TOCEntry[]`
-
-Generate table of contents from headings.
-
-```typescript
-const toc = md.getTableOfContents()
-// [
-//   {
-//     level: 1,
-//     text: 'Main Title',
-//     id: 'main-title',
-//     children: [...]
-//   }
-// ]
-```
-
-### Shortcut Methods
-
-```typescript
-md.getHeadings()      // Array<{ level, text }>
-md.getLinks()         // Array<{ text, url, title? }>
-md.getImages()        // Array<{ alt, src, title? }>
-md.getCodeBlocks()    // Array<{ lang?, code }>
-```
-
-### `toJSON()`
-
-Export everything as JSON.
-
-```typescript
-const json = md.toJSON()
-// { ast, metadata, html }
-```
-
-## Examples
-
-### Simple Conversion
-
-```typescript
-const md = new Markdown('# Hello\n\nWorld')
-console.log(md.parse().getHTML())
-// Output: <h1>Hello</h1><p>World</p>
-```
-
-### Extract Links from Document
-
-```typescript
-const md = new Markdown(document)
-md.parse()
-const links = md.getLinks()
-links.forEach(link => {
-  console.log(`[${link.text}](${link.url})`)
-})
-```
-
-### Generate Table of Contents
-
-```typescript
-const md = new Markdown(document)
-md.parse()
-const toc = md.getTableOfContents()
-renderTOC(toc)
-```
-
-### Extract Code Examples
-
-```typescript
-const md = new Markdown(document)
-md.parse()
-const codeBlocks = md.getCodeBlocks()
-codeBlocks.forEach(block => {
-  if (block.lang === 'javascript') {
-    executeCode(block.code)
-  }
-})
-```
-
-### Build Search Index
-
-```typescript
-const md = new Markdown(document)
-md.parse()
-const meta = md.getMetadata()
-
-// Index headings
-meta.headings.forEach(h => {
-  index.add({ type: 'heading', text: h.text, level: h.level })
-})
-
-// Index links
-meta.links.forEach(link => {
-  index.add({ type: 'link', text: link.text, url: link.url })
-})
-```
-
-## Supported Markdown
-
-### Block Elements
-- Headings: `# H1` through `###### H6`
-- Paragraphs: Text separated by blank lines
-- Code blocks: ` ```language \n code \n ``` `
-- Blockquotes: `> quote`
-- Lists: `- item` or `1. item`
-- Horizontal rules: `---`, `***`, or `___`
-
-### Inline Elements
-- Bold: `**text**` or `__text__`
-- Italic: `*text*` or `_text_`
-- Inline code: `` `code` ``
-- Links: `[text](url)`
-- Images: `![alt](src)`
-
-### GFM Extensions (v1.0.0)
-- Tables
-- Strikethrough: `~~text~~`
-- Autolinks: `https://example.com`
-- Task lists: `- [ ] task`
-- Footnotes
-
-## Performance
-
-- Parsing 1000 documents: < 100ms
-- Typical document (10KB): < 1ms
-- Memory efficient: streaming tokenizer
-
-See `benchmarks/` for detailed results.
-
-## Testing
+## Development
 
 ```bash
-npm run test              # Run all tests
-npm run test:cov          # Generate coverage report
-npm run dev               # Watch mode
+npm ci
+npm run check   # lint, tests with coverage (spec suites included), build, standards check
+npm run fuzz
 ```
 
-Test coverage: 90%+ statements, branches, functions, lines
+## Related libraries
 
-## Browser Support
-
-- Node.js 18+
-- Deno
-- Browser: ESM builds work in all modern browsers
-
-```html
-<script type="module">
-  import { Markdown } from 'https://cdn.jsdelivr.net/npm/lombokmarkdown'
-  const md = new Markdown('# Hello')
-  document.body.innerHTML = md.parse().getHTML()
-</script>
-```
-
-## Contributing
-
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md)
+- [LombokHTML](https://github.com/codinglombok/LombokHTML) — HTML parsing and sanitising
+- [LombokDocx](https://github.com/codinglombok/LombokDocx) — read and write `.docx`
+- [LombokCSV](https://github.com/codinglombok/LombokCSV) — CSV parsing and HTML tables
 
 ## License
 
-Apache License 2.0 - See [LICENSE](LICENSE)
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md)
-
-## See Also
-
-- [LombokDocx](https://github.com/codinglombok/LombokDocx) - DOCX extraction
-- [LombokCSV](https://github.com/codinglombok/LombokCSV) - CSV to HTML
-- [LombokPDF](https://github.com/codinglombok/lombokpdf) - PDF generation
-
-
-
-## Lombok Ecosystem
-
-This library is part of the **[Lombok Ecosystem](https://github.com/codinglombok)** — a modular suite of production-grade, Apache-2.0 libraries for document processing, PDF generation, and data visualization. Built for **developers, researchers, students, and the wider community**.
-
-[![Ecosystem](https://img.shields.io/badge/Lombok-Ecosystem-2e7d5b?logo=github)](https://github.com/codinglombok)
-[![Roadmap](https://img.shields.io/badge/Project-Roadmap-8b5cf6?logo=github)](https://github.com/orgs/codinglombok/projects)
-
-| Layer | Library | Purpose |
-|-------|---------|---------|
-| **Core** | [LombokPDF](https://github.com/codinglombok/LombokPDF) | PDF generation hub |
-| **Core** | [LombokCSS](https://github.com/codinglombok/LombokCSS) | Token-first CSS framework |
-| **Core** | [LombokFuzzer](https://github.com/codinglombok/LombokFuzzer) | Fuzzing test framework |
-| **Core** | [LombokCharts](https://github.com/codinglombok/LombokCharts) | Zero-dependency charts |
-| **Docs** | [LombokDocFlow](https://github.com/codinglombok/LombokDocFlow) | Universal import/export |
-| **Convert** | [LombokMarkDown](https://github.com/codinglombok/LombokMarkDown) | Markdown → HTML |
-| **Convert** | [LombokDocx](https://github.com/codinglombok/LombokDocx) | DOCX → HTML |
-| **Convert** | [LombokCSV](https://github.com/codinglombok/LombokCSV) | CSV → HTML tables |
-| **Meta** | [LombokJpegExif](https://github.com/codinglombok/LombokJpegExif) | JPEG EXIF metadata |
-
-> **New to the ecosystem?** Start at the [ecosystem overview](https://github.com/codinglombok) or the [DocFlow demo](https://github.com/codinglombok/LombokDocFlow).
-
+Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE) (HTML entity data, BSD-2-Clause).

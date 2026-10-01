@@ -1,52 +1,54 @@
 /**
- * LombokMarkdown - Type definitions
+ * LombokMarkDown - public type definitions
  */
 
 export interface MarkdownOptions {
-  gfm?: boolean                          // GitHub Flavored Markdown
-  breaks?: boolean                       // Convert \n to <br>
-  pedantic?: boolean                     // Strict spec compliance
-  smartLists?: boolean                   // Better list handling
-  smartypants?: boolean                  // Typographic replacements
-}
-
-export interface Token {
-  type: string
-  raw: string
-  text?: string
-  level?: number
-  items?: Token[]
-  ordered?: boolean
-  start?: number
-  loose?: boolean
-  delimiter?: string
-  href?: string
-  title?: string
-  alt?: string
-  indent?: string
-  code?: string
-  lang?: string
-  escaped?: boolean
-  pre?: boolean
-  line?: number
+  /** GitHub Flavored Markdown: tables, strikethrough, task lists, extended autolinks, tag filter (default true). */
+  gfm?: boolean
+  /** Render soft line breaks as `<br />` (default false). */
+  breaks?: boolean
+  /** Pass raw HTML through. When false (default) raw HTML is escaped and shown as text. */
+  html?: boolean
+  /** Drop `javascript:`, `vbscript:`, `file:` and non-image `data:` URLs (default true). */
+  safeLinks?: boolean
+  /** Add GitHub-style `id` attributes to headings (default false). */
+  headingIds?: boolean
+  /** @deprecated Ignored since 2.0.0 (output always follows CommonMark). */
+  pedantic?: boolean
+  /** @deprecated Ignored since 2.0.0. */
+  smartLists?: boolean
+  /** @deprecated Ignored since 2.0.0. */
+  smartypants?: boolean
 }
 
 export interface ASTNode {
-  type: 'root' | 'heading' | 'paragraph' | 'list' | 'listItem' | 'blockquote' | 'codeBlock' | 'horizontalRule' | 'thematicBreak' | 'html' | 'table' | 'tableRow' | 'tableCell' | 'text' | 'strong' | 'emphasis' | 'code' | 'link' | 'image' | 'lineBreak' | 'softBreak' | 'delete'
-  raw?: string
-  depth?: number                         // For headings (1-6)
+  type:
+    | 'root' | 'heading' | 'paragraph' | 'list' | 'listItem' | 'blockquote' | 'codeBlock' | 'thematicBreak'
+    | 'html' | 'table' | 'tableRow' | 'tableCell' | 'text' | 'strong' | 'emphasis' | 'code' | 'link' | 'image'
+    | 'lineBreak' | 'softBreak' | 'delete'
   children?: ASTNode[]
+  /** heading: 1-6 */
+  depth?: number
+  /** text, code, codeBlock, html */
   value?: string
-  lang?: string                          // For code blocks
-  ordered?: boolean                      // For lists
-  start?: number                         // For ordered lists
-  loose?: boolean                        // For list items
-  align?: 'left' | 'center' | 'right'   // For tables
-  header?: boolean                       // For table cells
-  href?: string                          // For links/images
-  title?: string                         // For links/images
-  alt?: string                           // For images
-  inline?: boolean                       // For emphasis, strong, code
+  /** codeBlock: first word of the info string */
+  lang?: string
+  /** codeBlock: full info string */
+  meta?: string
+  ordered?: boolean
+  start?: number
+  /** list: true when the list is loose */
+  loose?: boolean
+  /** listItem (GFM task list) */
+  checked?: boolean
+  align?: 'left' | 'center' | 'right'
+  header?: boolean
+  /** link / image destination */
+  href?: string
+  title?: string
+  alt?: string
+  /** code and html nodes that are inline */
+  inline?: boolean
 }
 
 export interface MarkdownMetadata {
@@ -54,12 +56,6 @@ export interface MarkdownMetadata {
   links: { text: string; url: string; title?: string }[]
   images: { alt: string; src: string; title?: string }[]
   codeBlocks: { lang?: string; code: string }[]
-}
-
-export interface HTMLOptions {
-  classMap?: Record<string, string>
-  idPrefix?: string
-  sanitize?: boolean
 }
 
 export interface TOCEntry {

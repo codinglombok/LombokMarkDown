@@ -1,6 +1,11 @@
 # LombokMarkDown — Python port
 
-> Planned. The python port will implement the identical public API and pass the same test fixtures as the reference TypeScript implementation.
-**Package name:** `lombokmarkdown`
+Status: **stub**. This folder contains no code yet; nothing is published for Python.
 
-Track progress on the [Lombok Ecosystem Roadmap](https://github.com/orgs/codinglombok/projects).
+| Item | Value |
+|---|---|
+| Planned package | `lombokmarkdown` (PyPI) |
+| Contract | [SPEC](../../docs/SPEC_LombokMarkDown_v2.0.0.md) |
+| Acceptance | all CommonMark 0.31.2 and GFM 0.29 extension examples, plus a runner for every case in `vectors/lombokmarkdown-vectors-v1.json` with byte-identical results (GP-11) |
+
+Contributions are welcome; see [CONTRIBUTING.md](../../CONTRIBUTING.md).
