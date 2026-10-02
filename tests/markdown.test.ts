@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Markdown } from '../src/markdown'
+import { Markdown, Slugger, markdownToHTML } from '../src/index'
 
 describe('LombokMarkdown - Basic Parsing', () => {
   it('parses headings (h1-h6)', () => {
@@ -54,7 +54,7 @@ describe('LombokMarkdown - Basic Parsing', () => {
   it('parses ordered lists', () => {
     const md = new Markdown('1. First\n2. Second\n3. Third')
     const html = md.parse().getHTML()
-    expect(html).toContain('<ol start="1">')
+    expect(html).toContain('<ol>')
     expect(html).toContain('<li>First</li>')
     expect(html).toContain('</ol>')
   })
@@ -136,10 +136,11 @@ describe('LombokMarkdown - HTML Escaping', () => {
     expect(html).toContain('&lt;script&gt;')
   })
 
-  it('escapes quotes in attributes', () => {
-    const md = new Markdown('Test [link](javascript:alert("xss"))')
-    const html = md.parse().getHTML()
-    expect(html).toContain('&quot;')
+  it('drops javascript: URLs and escapes quotes in attributes', () => {
+    const html = new Markdown('Test [link](javascript:alert("xss")) [t](/u "a\\"b")').getHTML()
+    expect(html).toContain('<a href="">link</a>')
+    expect(html).not.toContain('javascript')
+    expect(html).toContain('title="a&quot;b"')
   })
 })
 
@@ -177,7 +178,7 @@ const greeting = "Hello, World!"
     expect(html).toContain('<strong>bold</strong>')
     expect(html).toContain('<em>italic</em>')
     expect(html).toContain('<ul>')
-    expect(html).toContain('<ol start="1">')
+    expect(html).toContain('<ol>')
     expect(html).toContain('<blockquote>')
     expect(html).toContain('<hr />')
   })
@@ -238,5 +239,31 @@ describe('LombokMarkdown - Public API', () => {
     md.parse()
     const blocks = md.getCodeBlocks()
     expect(blocks).toHaveLength(1)
+  })
+})
+
+describe('LombokMarkdown - helpers and edge cases', () => {
+  it('markdownToHTML is a shortcut for new Markdown().getHTML()', () => {
+    expect(markdownToHTML('*x*')).toBe('<p><em>x</em></p>\n')
+  })
+
+  it('percent-encodes astral characters and replaces lone surrogates in URLs', () => {
+    expect(markdownToHTML('[a](/😀)')).toBe('<p><a href="/%F0%9F%98%80">a</a></p>\n')
+    expect(markdownToHTML('[a](/\ud800x)')).toBe('<p><a href="/%EF%BF%BDx">a</a></p>\n')
+    expect(markdownToHTML('[a](/\udc00)')).toBe('<p><a href="/%EF%BF%BD">a</a></p>\n')
+  })
+
+  it('decodes invalid numeric references to U+FFFD', () => {
+    expect(markdownToHTML('&#0; &#xD800; &#1114112;')).toBe('<p>\ufffd \ufffd \ufffd</p>\n')
+  })
+
+  it('Slugger is exported for building anchors elsewhere', () => {
+    const s = new Slugger()
+    expect([s.slug('A B'), s.slug('A B'), s.slug('a-b-1')]).toEqual(['a-b', 'a-b-1', 'a-b-1-1'])
+  })
+
+  it('parses only once', () => {
+    const md = new Markdown('# x')
+    expect(md.getAST()).toBe(md.getAST())
   })
 })

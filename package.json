@@ -1,25 +1,57 @@
 {
   "name": "lombokmarkdown",
-  "version": "1.0.0",
-  "description": "LombokMarkDown — Lightweight Markdown to HTML converter with GFM support",
+  "version": "2.0.0",
+  "description": "CommonMark 0.31.2 and GitHub Flavored Markdown to HTML with safe defaults, AST, metadata and table of contents. Zero dependencies. Part of the Lombok Ecosystem.",
+  "keywords": [
+    "markdown",
+    "commonmark",
+    "gfm",
+    "markdown-to-html",
+    "parser",
+    "ast",
+    "toc",
+    "zero-dependency",
+    "lombok-ecosystem"
+  ],
   "license": "Apache-2.0",
+  "author": "codinglombok (https://github.com/codinglombok)",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     }
   },
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "NOTICE",
+    "README.md",
+    "CHANGELOG.md",
+    "UPGRADE.md"
+  ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts",
-    "test": "vitest",
-    "test:cov": "vitest --coverage",
-    "lint": "tsc --noEmit",
-    "dev": "vitest --watch",
-    "fuzz": "npm run build && tsx tests/fuzz/markdown.fuzz.ts"
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "lint": "tsc --noEmit -p tsconfig.check.json",
+    "test": "vitest --run",
+    "coverage": "vitest --run --coverage",
+    "fuzz": "npm run build && tsx tests/fuzz/markdown.fuzz.ts",
+    "vectors": "python3 vectors/build_vectors.py",
+    "doctor": "bash scripts/lombok-doctor.sh LombokMarkDown",
+    "check": "npm run lint && npm run coverage && npm run build && npm run doctor"
   },
   "dependencies": {},
   "devDependencies": {
@@ -28,7 +60,10 @@
     "typescript": "^5.0.0",
     "@types/node": "^20.0.0",
     "lombokfuzzer": "^0.1.0",
-    "tsx": "^4.19.0"
+    "tsup": "^8.5.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.3"
   },
   "repository": {
     "type": "git",
@@ -38,14 +73,8 @@
   "bugs": {
     "url": "https://github.com/codinglombok/LombokMarkDown/issues"
   },
-  "author": "Lombok Digital <hello@codinglombok.dev>",
-  "files": [
-    "dist",
-    "LICENSE",
-    "README.md",
-    "CHANGELOG.md"
-  ],
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   }
 }
