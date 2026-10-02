@@ -96,3 +96,32 @@ export const reHtmlTag = new RegExp(
   '^(?:' + OPENTAG + '|' + CLOSETAG + '|' + HTMLCOMMENT + '|' + PROCESSINGINSTRUCTION + '|' + DECLARATION + '|' + CDATA + ')',
   'i',
 )
+
+// --- linear-time trimming (no regex backtracking on long whitespace runs) ---------
+
+function isBlankChar(c: string, nl: boolean): boolean {
+  return c === ' ' || c === '\t' || (nl && c === '\n')
+}
+
+/** Removes SPACE and TAB (and LF when `newlines`) from both ends in linear time. */
+export function trimBlank(s: string, newlines = false): string {
+  let a = 0
+  let b = s.length
+  while (a < b && isBlankChar(s[a], newlines)) a++
+  while (b > a && isBlankChar(s[b - 1], newlines)) b--
+  return a === 0 && b === s.length ? s : s.slice(a, b)
+}
+
+/** Removes trailing SPACE and TAB in linear time. */
+export function trimEndBlank(s: string): string {
+  let b = s.length
+  while (b > 0 && (s[b - 1] === ' ' || s[b - 1] === '\t')) b--
+  return b === s.length ? s : s.slice(0, b)
+}
+
+/** Removes trailing SPACE characters only. */
+export function trimEndSpaces(s: string): string {
+  let b = s.length
+  while (b > 0 && s[b - 1] === ' ') b--
+  return b === s.length ? s : s.slice(0, b)
+}

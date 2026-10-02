@@ -2,7 +2,7 @@
  * Block parser: CommonMark 0.31.2 §4-§5 (appendix "A parsing strategy") plus GFM
  * tables and task list items.
  */
-import { CLOSETAG, OPENTAG, isSpaceOrTab, unescapeString } from './common.js'
+import { CLOSETAG, OPENTAG, isSpaceOrTab, trimBlank, trimEndBlank, unescapeString } from './common.js'
 import { InlineParser, type RefMap } from './inlines.js'
 import { type Align, type ListData, MdNode, type NodeType, walk } from './node.js'
 
@@ -18,14 +18,18 @@ const reHtmlBlockOpen: RegExp[] = [
   /^<[/]?(?:address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[123456]|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|nav|noframes|ol|optgroup|option|p|param|search|section|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul)(?:\s|[/]?[>]|$)/i,
   new RegExp('^(?:' + OPENTAG + '|' + CLOSETAG + ')\\s*$', 'i'),
 ]
-const reHtmlBlockClose: RegExp[] = [
-  /./,
-  /<\/(?:script|pre|textarea|style)>/i,
-  /-->/,
-  /\?>/,
-  />/,
-  /\]\]>/,
-]
+/** End conditions of HTML block types 1-5 (CommonMark 0.31.2 §4.6); types 2-5 are fixed strings. */
+const reHtmlBlockType1Close = /<\/(?:script|pre|textarea|style)>/i
+function htmlBlockEnds(type: number, line: string): boolean {
+  switch (type) {
+    case 1: return reHtmlBlockType1Close.test(line)
+    case 2: return line.includes('-->')
+    case 3: return line.includes('?>')
+    case 4: return line.includes('>')
+    case 5: return line.includes(']]>')
+    default: return false
+  }
+}
 const reThematicBreak = /^(?:\*[ \t]*){3,}$|^(?:_[ \t]*){3,}$|^(?:-[ \t]*){3,}$/
 const reMaybeSpecial = /^[#`~*+_=<>0-9-|:]/
 const reNonSpace = /[^ \t\f\v\r\n]/
@@ -37,7 +41,8 @@ const reClosingCodeFence = /^(?:`{3,}|~{3,})(?=[ \t]*$)/
 const reSetextHeadingLine = /^(?:=+|-+)[ \t]*$/
 const reLineEnding = /\r\n|\n|\r/
 const reTaskMarker = /^\[([ xX])\](?=[ \t]|$)/
-const reTableDelimRow = /^\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?[ \t]*$/
+// Characters a delimiter row may contain; the cell structure is validated after splitting.
+const reTableDelimChars = /^[|:\- \t]+$/
 
 export interface BlockOptions {
   gfm: boolean
@@ -45,7 +50,7 @@ export interface BlockOptions {
 
 /** Splits a GFM table row into raw cell strings (unescaped pipes split cells). */
 export function splitTableRow(line: string): string[] {
-  let s = line.replace(/^[ \t]+|[ \t]+$/g, '')
+  let s = trimBlank(line)
   if (s.startsWith('|')) s = s.slice(1)
   if (s.endsWith('|') && !s.endsWith('\\|')) s = s.slice(0, -1)
   const cells: string[] = []
@@ -56,13 +61,13 @@ export function splitTableRow(line: string): string[] {
       cur += '|'
       i++
     } else if (c === '|') {
-      cells.push(cur.replace(/^[ \t]+|[ \t]+$/g, ''))
+      cells.push(trimBlank(cur))
       cur = ''
     } else {
       cur += c
     }
   }
-  cells.push(cur.replace(/^[ \t]+|[ \t]+$/g, ''))
+  cells.push(trimBlank(cur))
   return cells
 }
 
@@ -325,7 +330,7 @@ export class BlockParser {
           block.info = unescapeString(first.trim())
           block.literal = content.slice(nl + 1)
         } else {
-          block.literal = block.content.replace(/(\n *)+$/, '\n')
+          block.literal = trimTrailingBlankLines(block.content)
         }
         block.content = ''
         break
@@ -424,7 +429,7 @@ export class BlockParser {
       this.closeUnmatchedBlocks()
       const h = this.addChild('heading')
       h.level = m[0].trim().length
-      h.content = ln.slice(this.offset).replace(/^[ \t]*#+[ \t]*$/, '').replace(/[ \t]+#+[ \t]*$/, '')
+      h.content = stripClosingSequence(ln.slice(this.offset))
       this.advanceOffset(ln.length - this.offset, false)
       return 2
     }
@@ -453,7 +458,7 @@ export class BlockParser {
       }
     }
     // GFM table (header = last paragraph line, this line = delimiter row)
-    if (this.options.gfm && !this.indented && container.type === 'paragraph' && rest().includes('|') && reTableDelimRow.test(rest())) {
+    if (this.options.gfm && !this.indented && container.type === 'paragraph' && rest().includes('|') && rest().includes('-') && reTableDelimChars.test(rest())) {
       const lines = container.content.replace(/\n$/, '').split('\n')
       const headerLine = lines[lines.length - 1]
       const header = splitTableRow(headerLine)
@@ -596,8 +601,7 @@ export class BlockParser {
       }
       if (this.acceptsLines(t)) {
         this.addLine()
-        if (t === 'htmlBlock' && container.htmlBlockType >= 1 && container.htmlBlockType <= 5 &&
-          reHtmlBlockClose[container.htmlBlockType].test(ln.slice(this.offset))) {
+        if (t === 'htmlBlock' && htmlBlockEnds(container.htmlBlockType, ln.slice(this.offset))) {
           this.finalize(container)
         }
       } else if (t === 'table' && !this.blank) {
@@ -648,6 +652,30 @@ function maybeThematicBreak(ln: string, start: number): boolean {
     else if (ch !== ' ' && ch !== '\t') return false
   }
   return count >= 3
+}
+
+/** Removes an optional ATX closing sequence (CommonMark 0.31.2 §4.2) in linear time. */
+function stripClosingSequence(s: string): string {
+  let end = s.length
+  while (end > 0 && (s[end - 1] === ' ' || s[end - 1] === '\t')) end--
+  let j = end
+  while (j > 0 && s[j - 1] === '#') j--
+  if (j === end) return s
+  const k = trimEndBlank(s.slice(0, j)).length
+  if (k === 0) return ''
+  return j > 0 && (s[j - 1] === ' ' || s[j - 1] === '\t') ? s.slice(0, k) : s
+}
+
+/** Indented code: drop trailing lines made of spaces, keep one final LF (linear time). */
+function trimTrailingBlankLines(content: string): string {
+  let end = content.length
+  let cut = -1
+  for (let i = end - 1; i >= 0; i--) {
+    const c = content[i]
+    if (c === '\n') cut = i
+    else if (c !== ' ') break
+  }
+  return cut >= 0 ? content.slice(0, cut) + '\n' : content
 }
 
 function listsMatch(a: ListData, b: ListData): boolean {

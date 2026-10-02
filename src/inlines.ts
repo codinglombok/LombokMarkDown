@@ -2,7 +2,8 @@
  * Inline parser: CommonMark 0.31.2 §6 plus GFM strikethrough and extended autolinks.
  */
 import {
-  ESCAPABLE, decodeEntity, normalizeReference, normalizeURI, reEntityHere, reHtmlTag, unescapeString,
+  ESCAPABLE, decodeEntity, normalizeReference, normalizeURI, reEntityHere, reHtmlTag, trimBlank, trimEndSpaces,
+  unescapeString,
 } from './common.js'
 import { MdNode, text, walk } from './node.js'
 
@@ -45,7 +46,6 @@ const reSpnl = /^ *(?:\n *)?/
 const reWhitespaceChar = /^[ \t\n\x0b\x0c\x0d]/
 const reUnicodeWhitespaceChar = /^[\t\n\f\r\p{Zs}]/u
 const rePunctuation = /^[\p{P}\p{S}]/u
-const reFinalSpace = / *$/
 const reInitialSpace = /^ */
 const reEmailAutolink = /^<([a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*)>/
 const reAutolink = /^<[A-Za-z][A-Za-z0-9.+-]{1,31}:[^<>\x00-\x20]*>/i
@@ -87,7 +87,8 @@ export class InlineParser {
 
   /** Parses `block.content` into inline children of `block`. */
   parse(block: MdNode, source = block.content): void {
-    this.subject = source.replace(/^[ \t\n]+|[ \t\n]+$/g, '')
+    this.subject = trimBlank(source, true)
+    this.terminators = null
     this.pos = 0
     this.delimiters = null
     this.brackets = null
@@ -127,7 +128,7 @@ export class InlineParser {
     const last = block.lastChild
     if (last && last.type === 'text' && last.literal.endsWith(' ')) {
       const hard = last.literal.length >= 2 && last.literal[last.literal.length - 2] === ' '
-      last.literal = last.literal.replace(reFinalSpace, '')
+      last.literal = trimEndSpaces(last.literal)
       block.append(new MdNode(hard ? 'linebreak' : 'softbreak'))
     } else {
       block.append(new MdNode('softbreak'))
@@ -518,7 +519,21 @@ export class InlineParser {
     return false
   }
 
+  /** Last positions of HTML terminators in the subject, so unclosed constructs fail in O(1). */
+  private terminators: { comment: number; pi: number; cdata: number; gt: number } | null = null
+
   private parseHtmlTag(block: MdNode): boolean {
+    const t = (this.terminators ??= {
+      comment: this.subject.lastIndexOf('-->'),
+      pi: this.subject.lastIndexOf('?>'),
+      cdata: this.subject.lastIndexOf(']]>'),
+      gt: this.subject.lastIndexOf('>'),
+    })
+    const p = this.pos
+    if (t.gt < p) return false
+    if (this.subject.startsWith('<!--', p) && t.comment < p + 2) return false
+    if (this.subject.startsWith('<?', p) && t.pi < p + 2) return false
+    if (this.subject.startsWith('<![CDATA[', p) && t.cdata < p + 9) return false
     const m = this.match(reHtmlTag)
     if (m === null) return false
     const node = new MdNode('htmlInline')
@@ -601,7 +616,9 @@ function trimAutolinkTail(path: string): string {
   let p = path
   for (;;) {
     const before = p
-    p = p.replace(/[?!.,:*_~]+$/, '')
+    let e = p.length
+    while (e > 0 && '?!.,:*_~'.includes(p[e - 1])) e--
+    p = p.slice(0, e)
     if (p.endsWith(')')) {
       const open = (p.match(/\(/g) ?? []).length
       const close = (p.match(/\)/g) ?? []).length
