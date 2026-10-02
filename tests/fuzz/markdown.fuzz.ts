@@ -1,8 +1,8 @@
 /**
  * Fuzz test — LombokMarkDown parser
  *
- * Target: `new Markdown(input).getHTML()` — tokenizer → parser → HTML compiler
- * pipeline. Ini satu-satunya jalur yang memproses teks arbitrer dari luar
+ * Target: `new Markdown(input)` — block parser, inline parser, renderer, AST,
+ * metadata and table of contents. Ini satu-satunya jalur yang memproses teks arbitrer dari luar
  * (user-supplied markdown), jadi ini kandidat fuzz yang tepat: kita cari input
  * yang bikin exception tidak tertangani, infinite loop (lewat timeoutMs), atau
  * regex catastrophic backtracking di tokenizer/parser.
@@ -28,7 +28,11 @@ const fuzzer = new LombokFuzzer({
     mode: HarnessMode.InProcess,
     targetFunction: (data: Uint8Array) => {
       const text = Buffer.from(data).toString('utf-8')
-      new Markdown(text).getHTML()
+      // Markdown never throws on input: every byte sequence is a valid document.
+      const md = new Markdown(text)
+      md.getHTML()
+      md.getTableOfContents()
+      new Markdown(text, { gfm: false, html: true, headingIds: true }).toJSON()
     },
   },
 })
